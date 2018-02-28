@@ -1,8 +1,16 @@
-BIMM-143, Lecture 15
-================
+---
+layout: page
+title: BIMM-143, Lecture 15
+---
 
 Pathway analysis from RNA-seq differential expression results
 =============================================================
+
+**BIMM-143 Lecture 15:**
+Barry Grant &lt; <http://thegrantlab.org> &gt;
+Date: 2018-02-22   (23:17:42 PST on Thu, Feb 22)
+{:.message}
+
 
 Overview
 --------
@@ -170,28 +178,7 @@ Next, get results for the HoxA1 knockdown versus control siRNA (remember we labe
 
 ``` r
 res = results(dds, contrast=c("condition", "hoxa1_kd", "control_sirna"))
-head(res)
 ```
-
-    ## log2 fold change (MLE): condition hoxa1_kd vs control_sirna 
-    ## Wald test p-value: condition hoxa1 kd vs control sirna 
-    ## DataFrame with 6 rows and 6 columns
-    ##                   baseMean log2FoldChange      lfcSE        stat
-    ##                  <numeric>      <numeric>  <numeric>   <numeric>
-    ## ENSG00000279457   29.91358     0.17927483 0.32459294   0.5523066
-    ## ENSG00000187634  183.22965     0.42644724 0.14017817   3.0421802
-    ## ENSG00000188976 1651.18808    -0.69272061 0.05484412 -12.6307173
-    ## ENSG00000187961  209.63794     0.72975918 0.13178350   5.5375609
-    ## ENSG00000187583   47.25512     0.04055411 0.27169055   0.1492658
-    ## ENSG00000187642   11.97975     0.54275443 0.52117592   1.0414035
-    ##                       pvalue         padj
-    ##                    <numeric>    <numeric>
-    ## ENSG00000279457 5.807383e-01 6.846746e-01
-    ## ENSG00000187634 2.348712e-03 5.109223e-03
-    ## ENSG00000188976 1.429690e-36 1.745815e-35
-    ## ENSG00000187961 3.067131e-08 1.109758e-07
-    ## ENSG00000187583 8.813439e-01 9.191354e-01
-    ## ENSG00000187642 2.976883e-01 4.016657e-01
 
 Let's reorder these results by p-value and call summary() on the results object to get a sense of how many genes are up or down-regulated at the default FDR of 0.1.
 
@@ -428,8 +415,23 @@ head(keggres$greater)
     ## hsa04916 Melanogenesis                0.5297970       85 0.022339115
 
 ``` r
-#head(keggres$less)
+head(keggres$less)
 ```
+
+    ##                                      p.geomean stat.mean        p.val
+    ## hsa04110 Cell cycle               1.004024e-05 -4.353447 1.004024e-05
+    ## hsa03030 DNA replication          8.909718e-05 -3.968605 8.909718e-05
+    ## hsa03013 RNA transport            1.471026e-03 -3.007785 1.471026e-03
+    ## hsa04114 Oocyte meiosis           1.987557e-03 -2.915377 1.987557e-03
+    ## hsa03440 Homologous recombination 2.942017e-03 -2.868137 2.942017e-03
+    ## hsa00240 Pyrimidine metabolism    5.800212e-03 -2.549616 5.800212e-03
+    ##                                         q.val set.size         exp1
+    ## hsa04110 Cell cycle               0.001606438      120 1.004024e-05
+    ## hsa03030 DNA replication          0.007127774       36 8.909718e-05
+    ## hsa03013 RNA transport            0.078454709      143 1.471026e-03
+    ## hsa04114 Oocyte meiosis           0.079502292       98 1.987557e-03
+    ## hsa03440 Homologous recombination 0.094144560       28 2.942017e-03
+    ## hsa00240 Pyrimidine metabolism    0.138500584       95 5.800212e-03
 
 Each `keggres$greater` and `keggres$less` object is data matrix with gene sets as rows sorted by p-value. Lets look at both up (greater), down (less), and statistics by calling **head()** with the **lapply()** function. As always if you want to find out more about a particular function or its return values use the R help system (e.g. `?gage` or `?lapply`).
 
@@ -508,16 +510,17 @@ head(pathways)
     ## hsa04740 Olfactory transduction       0.4624078       39 0.014450242
     ## hsa04916 Melanogenesis                0.5297970       85 0.022339115
 
+
 Now, let's try out the **pathview()** function from the [pathview package](https://bioconductor.org/packages/release/bioc/html/pathview.html) to make a pathway plot with our result shown in color. To begin with lets manually supply a `pathway.id` (namely the first part of the `"hsa04110 Cell cycle"`) that we could see from the print out above.
 
 ``` r
 pathview(gene.data=foldchanges, pathway.id="hsa04110")
 ```
 
+    ## Info: Downloading xml files for hsa04110, 1/1 pathways..
+    ## Info: Downloading png files for hsa04110, 1/1 pathways..
     ## 'select()' returned 1:1 mapping between keys and columns
-
-    ## Info: Working in directory /Users/barry/Desktop/bimm143_class/class15
-
+    ## Info: Working in directory /Users/barry/Desktop/bggn213_class/class18
     ## Info: Writing image file hsa04110.pathview.png
 
 This downloads the patway figure data from KEGG and adds our results to it. You can play with the other input arguments to **pathview()** to change the dispay in various ways including generating a PDF graph. For example:
@@ -527,15 +530,9 @@ This downloads the patway figure data from KEGG and adds our results to it. You 
 pathview(gene.data=foldchanges, pathway.id="hsa04110", kegg.native=FALSE)
 ```
 
-    ## 'select()' returned 1:1 mapping between keys and columns
-
-    ## Info: Working in directory /Users/barry/Desktop/bimm143_class/class15
-
-    ## Info: Writing image file hsa04110.pathview.pdf
-
 Here is the default low resolution raster PNG output from the first pathview() call above:
 
-![](hsa04110.pathview.png)
+![]({{ site.baseurl }}/class-material/hsa04110.pathview.png)
 
 Note how many of the genes in this pathway are pertubed (i.e. colored) in our results.
 
@@ -558,17 +555,21 @@ Finally, lets pass these IDs in `keggresids` to the **pathview()** function to d
 pathview(gene.data=foldchanges, pathway.id=keggresids, species="hsa")
 ```
 
-Here are the plots:
 
-![](hsa00140.pathview.png)
 
-![](hsa04142.pathview.png)
+Here are the plots:  
 
-![](hsa04630.pathview.png)
+![]({{ site.baseurl }}/class-material/hsa00140.pathview.png)
 
-![](hsa04640.pathview.png)
+![]({{ site.baseurl }}/class-material/hsa04142.pathview.png)
 
-![](hsa04740.pathview.png)
+![]({{ site.baseurl }}/class-material/hsa04630.pathview.png)
+
+![]({{ site.baseurl }}/class-material/hsa04640.pathview.png)
+
+![]({{ site.baseurl }}/class-material/hsa04740.pathview.png)
+
+
 
 Section 3. Gene Ontology (GO)
 =============================
@@ -640,10 +641,11 @@ lapply(gobpres, head)
     ## GO:0002009 morphogenesis of an epithelium  3.429293 3.429293
     ## GO:0016337 cell-cell adhesion              3.163087 3.163087
 
+
 Section 4. Reactome Pathway Analysis
 ------------------------------------
 
-Reactome is database consisting of biological molecules and their relation to pathways and processes. Reactome, such as many other tools, has an online software available (<https://reactome.org/>) and R package available (<https://bioconductor.org/packages/release/bioc/html/ReactomePA.html>).
+Reactome is database consisting of biological molecules and their relation to pathways and processes. Reactome, such as many other tools, has an online software available (<https://reactome.org/>) and R package available (<https://bioconductor.org/packages/release/bioc/html/ReactomePA.html>).  
 
 If you would like more information, the documentation is available here: <https://reactome.org/user/guide>
 
@@ -662,18 +664,20 @@ print(paste("Total number of significant genes:", length(sig_genes)))
 write.table(sig_genes, file="significant_genes.txt", row.names=FALSE, col.names=FALSE, quote=FALSE)
 ```
 
-Then, to perform pathway analysis online go to the Reactome website (<https://reactome.org/PathwayBrowser/#TOOL=AT>). Select “choose file” to upload your significant gene list. Then, select the parameters “Project to Humans”, then click “Analyze”.
+Then, to perform pathway analysis online go to the Reactome website (<https://reactome.org/PathwayBrowser/#TOOL=AT>). Select “choose file” to upload your significant gene list. Then, select the parameters “Project to Humans”, then click “Analyze”.  
 
-> **Question**: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?
+> **Question**: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?  
+
 
 Section 5. GO Analysis
 ----------------------
 
 Gene Set Gene Ontology (GO) Enrichment is a method to determine over-represented or under-represented GO terms for a given set of genes. GO terms are formal structured controlled vocabularies (ontologies) for gene products in terms of their biological function. The goal of this analysis is to determine the biological process the given set of genes are associated with.
 
-To perform Gene Set GO Enrichment online go to the website <http://www.geneontology.org/page/go-enrichment-analysis>. Paste your significant gene list from section 4. Then, select "biological process" and "homo sapiens", and click submit.
+To perform Gene Set GO Enrichment online go to the website <http://www.geneontology.org/page/go-enrichment-analysis>. Paste your significant gene list from section 4. Then, select “biological process” and “homo sapiens”, and click submit.
 
-> **Question**: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?
+> **Question**: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?  
+
 
 Session Information
 -------------------

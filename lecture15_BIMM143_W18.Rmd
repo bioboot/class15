@@ -8,6 +8,8 @@ output: github_document
 #  pdf_document:
 #    toc: true
 #    toc_depth: 2
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
@@ -47,7 +49,7 @@ The authors report on differential analysis of lung fibroblasts in response to l
 
 ## Section 1. Differential Expression Analysis 
 
-You can download the count data and associated metadata from here: [GSE37704_featurecounts.csv](https://bioboot.github.io/bggn213_f17/class-material/GSE37704_featurecounts.csv) and [GSE37704_metadata.csv](https://bioboot.github.io/bggn213_f17/class-material/GSE37704_metadata.csv). This is similar to our starting point for the last class where we used DESeq2 for the first time. We will use it again today!
+You can download the count data and associated metadata from here: [GSE37704_featurecounts.csv](https://bioboot.github.io/bimm143_W18/class-material/GSE37704_featurecounts.csv) and [GSE37704_metadata.csv](https://bioboot.github.io/bimm143_W18/class-material/GSE37704_metadata.csv). This is similar to our starting point for the last class where we used DESeq2 for the first time. We will use it again today!
 
 
 ```{r, warning=FALSE, results=FALSE, message=FALSE}
@@ -102,9 +104,11 @@ Next, get results for the HoxA1 knockdown versus control siRNA (remember we labe
 
 ```{r}
 res = results(dds, contrast=c("condition", "hoxa1_kd", "control_sirna"))
+head(res)
 ```
 
 Let's reorder these results by p-value and call summary() on the results object to get a sense of how many genes are up or down-regulated at the default FDR of 0.1.
+
 
 ```{r}
 res = res[order(res$pvalue),]
@@ -201,7 +205,7 @@ So it is a list object (you can check it with `str(keggres)`) and we can use the
 
 ```{r}
 head(keggres$greater)
-head(keggres$less)
+#head(keggres$less)
 ```
 
 Each `keggres$greater` and `keggres$less` object is data matrix with gene sets as rows sorted by p-value. Lets look at both up (greater), down (less), and statistics by calling **head()** with the **lapply()** function. As always if you want to find out more about a particular function or its return values use the R help system (e.g. `?gage` or `?lapply`).
@@ -216,8 +220,31 @@ Now, let's process the results to pull out the top 5 upregulated pathways, then 
 ## Sanity check displaying all pathways data
 pathways = data.frame(id=rownames(keggres$greater), keggres$greater)
 head(pathways)
+```
 
-## focus on top 5 here only
+Now, let's try out the **pathview()** function from the [pathview package](https://bioconductor.org/packages/release/bioc/html/pathview.html) to make a pathway plot with our result shown in color. To begin with lets manually supply a `pathway.id` (namely the first part of the `"hsa04110 Cell cycle"`) that we could see from the print out above.
+
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa04110")
+```
+
+This downloads the patway figure data from KEGG and adds our results to it. You can play with the other input arguments to **pathview()** to change the dispay in various ways including generating a PDF graph. For example:
+
+```{r}
+# A different PDF based output of the same data
+pathview(gene.data=foldchanges, pathway.id="hsa04110", kegg.native=FALSE)
+```
+
+Here is the default low resolution raster PNG output from the first pathview() call above:
+
+![](hsa04110.pathview.png)
+
+Note how many of the genes in this pathway are pertubed (i.e. colored) in our results.
+
+Now, let's process our results a bit more to automagicaly pull out the top 5 upregulated pathways, then further process that just to get the IDs needed by the **pathview()** function. We'll use these KEGG pathway IDs for plotting below.
+
+```{r}
+## Focus on top 5 upregulated pathways here for demo purposes only
 keggrespathways <- rownames(keggres$greater)[1:5]
 
 # Extract the IDs part of each string
@@ -225,24 +252,15 @@ keggresids = substr(keggrespathways, start=1, stop=8)
 keggresids
 ```
 
-Finally, the **pathview()** function in the pathview package makes the plots. Let’s write a function so we can loop through and draw plots for the top 5 pathways we created above.
+Finally, lets pass these IDs in `keggresids` to the **pathview()** function to draw plots for all the top 5 pathways.
 
 ```{r, warning=FALSE, results=FALSE, message=FALSE}
-# Define plotting function for applying later
-plot_pathway = function(pid) { 
-  pathview(gene.data=foldchanges, 
-           pathway.id=pid, 
-           species="hsa", 
-           new.signature=FALSE)
-}
-
-# plot multiple pathways (plots saved to disk and returns a throwaway list object)
-tmp = sapply(keggresids, function(pid) pathview(gene.data=foldchanges, pathway.id=pid, species="hsa"))
+pathview(gene.data=foldchanges, pathway.id=keggresids, species="hsa")
 ```
 
 Here are the plots:
-![](hsa00140.pathview.png)
 
+![](hsa00140.pathview.png)
 
 ![](hsa04142.pathview.png)
 
@@ -266,6 +284,40 @@ gobpres = gage(foldchanges, gsets=gobpsets, same.dir=TRUE)
 
 lapply(gobpres, head)
 ```
+
+## Section 4. Reactome Pathway Analysis
+
+Reactome is database consisting of biological molecules and their relation to pathways and processes. Reactome, such as many other tools, has an online software available (<https://reactome.org/>) and R package available (<https://bioconductor.org/packages/release/bioc/html/ReactomePA.html>).  
+
+If you would like more information, the documentation is available here: <https://reactome.org/user/guide>
+
+Let's now conduct over-representation enrichment analysis and pathway-topology analysis with Reactome using the previous list of significant genes generated from our differential expression results above.
+
+First, Using R, output the list of significant genes at the 0.05 level as a plain text file:
+
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+print(paste("Total number of significant genes:", length(sig_genes)))
+```
+
+```{r}
+write.table(sig_genes, file="significant_genes.txt", row.names=FALSE, col.names=FALSE, quote=FALSE)
+```
+
+Then, to perform pathway analysis online go to the Reactome website (<https://reactome.org/PathwayBrowser/#TOOL=AT>). Select “choose file” to upload your significant gene list. Then, select the parameters “Project to Humans”, then click “Analyze”.  
+
+> **Question**: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?  
+
+
+## Section 5. GO Analysis
+
+Gene Set Gene Ontology (GO) Enrichment is a method to determine over-represented or under-represented GO terms for a given set of genes. GO terms are formal structured controlled vocabularies (ontologies) for gene products in terms of their biological function. The goal of this analysis is to determine the biological process the given set of genes are associated with.
+
+To perform Gene Set GO Enrichment online go to the website <http://www.geneontology.org/page/go-enrichment-analysis>. Paste your significant gene list from section 4. Then, select "biological process" and "homo sapiens", and click submit.
+
+> **Question**: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?  
+
+
 
 
 ## Session Information
